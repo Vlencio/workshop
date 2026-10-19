@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block body %}
+<header class="topo">
+  <strong>SIG · Gestão de Vendas</strong>
+  <span>Olá, <b id="usuario-logado">{{ usuario }}</b> · <a href="{{ url_for('logout') }}">Sair</a></span>
+</header>
+
+<main class="conteudo">
+  <!-- KPIs: cada card tem um id e o valor bruto em data-valor -->
+  <section class="kpis">
+    <div class="card kpi" id="kpi-faturamento" data-valor="{{ '%.2f'|format(kpis.faturamento) }}">
+      <span class="muted">Faturamento</span>
+      <strong>{{ kpis.faturamento|brl }}</strong>
+    </div>
+    <div class="card kpi" id="kpi-vendas" data-valor="{{ kpis.qtd_vendas }}">
+      <span class="muted">Quantidade de vendas</span>
+      <strong>{{ kpis.qtd_vendas }}</strong>
+    </div>
+  </section>
+
+  <!-- Faturamento mensal em barras (HTML puro, sem JS) -->
+  <section class="card">
+    <h2>Faturamento mensal</h2>
+    {% set maximo = mensal|map(attribute='faturamento')|max %}
+    <ul class="barras" id="faturamento-mensal">
+      {% for m in mensal %}
+      <li data-mes="{{ m.mes }}" data-valor="{{ '%.2f'|format(m.faturamento) }}">
+        <span class="mes">{{ m.mes }}</span>
+        <span class="trilho"><span class="barra" style="width: {{ (m.faturamento / maximo * 100)|round(1) }}%"></span></span>
+        <span class="valor">{{ m.faturamento|brl }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="muted pequeno">Também disponível em JSON: <code>/api/faturamento</code></p>
+  </section>
+
+  <!-- Tabela de vendas paginada -->
+  <section class="card">
+    <div class="cabecalho-tabela">
+      <h2>Itens vendidos <span class="muted">({{ total_registros }} itens)</span></h2>
+      <nav class="filtros">
+        {% for s in [None, 'Pago', 'Pendente', 'Cancelado'] %}
+          <a href="{{ url_for('dashboard', status=s) }}" class="{{ 'ativo' if status == s }}">{{ s or 'Todas' }}</a>
+        {% endfor %}
+      </nav>
+    </div>
+
+    <div class="rolagem">
+      <table id="tabela-vendas">
+        <thead>
+          <tr><th>Nota</th><th>Data</th><th>Cliente</th><th>Vendedor</th><th>Produto</th>
+              <th class="num">Qtd</th><th class="num">Unitário</th><th class="num">Total</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% set ns = namespace(ultima=None, faixa=False) %}
+          {% for v in vendas %}
+          {% if v.nota != ns.ultima %}{% set ns.faixa = not ns.faixa %}{% set ns.ultima = v.nota %}{% endif %}
+          <tr data-nota="{{ v.nota }}" class="{{ 'faixa' if ns.faixa }}">
+            <td>{{ v.nota }}</td>
+            <td>{{ v.data|data_br }}</td>
+            <td>{{ v.cliente }}</td>
+            <td>{{ v.vendedor }}</td>
+            <td>{{ v.produto }}</td>
+            <td class="num">{{ v.quantidade }}</td>
+            <td class="num">{{ v.preco_unitario|brl }}</td>
+            <td class="num">{{ v.total|brl }}</td>
+            <td><span class="status status-{{ v.status|lower }}">{{ v.status }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <nav class="paginacao" aria-label="Paginação">
+      {% if pagina > 1 %}
+        <a href="{{ url_for('dashboard', page=pagina-1, status=status) }}" rel="prev">« Anterior</a>
+      {% endif %}
+      <span>Página {{ pagina }} de {{ total_paginas }}</span>
+      {% if pagina < total_paginas %}
+        <a href="{{ url_for('dashboard', page=pagina+1, status=status) }}" rel="next" class="proxima">Próxima »</a>
+      {% endif %}
+    </nav>
+  </section>
+</main>
+{% endblock %}

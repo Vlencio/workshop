@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Login · Painel de Vendas{% endblock %}
+{% block body %}
+<main class="login-wrap">
+  <form class="card login-card" method="post" id="form-login">
+    <h1>Painel de Vendas</h1>
+    <p class="muted">Entre com sua conta para continuar</p>
+
+    {% with msgs = get_flashed_messages() %}
+      {% for m in msgs %}<div class="alerta">{{ m }}</div>{% endfor %}
+    {% endwith %}
+
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <label for="usuario">Usuário</label>
+    <input id="usuario" name="usuario" autocomplete="username" required autofocus>
+
+    <label for="senha">Senha</label>
+    <input id="senha" name="senha" type="password" autocomplete="current-password" required>
+
+    <button type="submit">Entrar</button>
+    <p class="dica">Teste: <code>admin</code> / <code>admin123</code></p>
+  </form>
+</main>
+{% endblock %}
