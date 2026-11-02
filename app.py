@@ -94,7 +94,36 @@ def gerar_vendas(n_notas=150, seed=42):
     return itens
 
 
-VENDAS = gerar_vendas()
+def destacar_campeao_cancelamentos(itens):
+    """Faz o vendedor com mais notas pagas ser também o que mais cancela.
+
+    Só troca o vendedor de notas CANCELADAS (passa de quem mais cancela para
+    o campeão de vendas). Valores, notas pagas e faturamento não mudam.
+    """
+    def notas_por_vendedor(status):
+        cont = {vd: set() for vd in VENDEDORES}
+        for v in itens:
+            if v["status"] == status:
+                cont[v["vendedor"]].add(v["nota"])
+        return cont
+
+    pagas = notas_por_vendedor("Pago")
+    campeao = max(VENDEDORES, key=lambda vd: len(pagas[vd]))
+
+    while True:
+        canc = notas_por_vendedor("Cancelado")
+        rival = max((vd for vd in VENDEDORES if vd != campeao),
+                    key=lambda vd: len(canc[vd]))
+        if len(canc[campeao]) > len(canc[rival]):
+            break
+        nota = max(canc[rival])  # sempre a mesma escolha -> dados reproduzíveis
+        for v in itens:
+            if v["nota"] == nota:
+                v["vendedor"] = campeao
+    return itens
+
+
+VENDAS = destacar_campeao_cancelamentos(gerar_vendas())
 
 
 def resumo(vendas):
